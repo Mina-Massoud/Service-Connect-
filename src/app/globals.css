@@ -1,0 +1,113 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* ServiceConnect brand tokens */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-page: var(--page);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* surfaces */
+  --page: oklch(0.971 0.003 264);          /* light gray page behind phone */
+  --background: oklch(1 0 0);              /* white screen surface */
+  --foreground: oklch(0.21 0.02 264);      /* near-black slate text */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.02 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 264);
+
+  /* blue-600 primary (#2563EB) */
+  --primary: oklch(0.546 0.245 262.881);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --brand: oklch(0.546 0.245 262.881);
+  --brand-foreground: oklch(0.985 0 0);
+  --brand-soft: oklch(0.962 0.018 264);    /* blue-50 tint */
+
+  --secondary: oklch(0.968 0.004 264);
+  --secondary-foreground: oklch(0.27 0.02 264);
+  --muted: oklch(0.968 0.004 264);
+  --muted-foreground: oklch(0.55 0.02 264);
+  --accent: oklch(0.962 0.018 264);
+  --accent-foreground: oklch(0.42 0.18 262.881);
+
+  /* semantic states */
+  --success: oklch(0.62 0.17 152);
+  --success-foreground: oklch(0.985 0 0);
+  --success-soft: oklch(0.95 0.05 152);
+  --warning: oklch(0.74 0.16 70);
+  --warning-soft: oklch(0.96 0.06 80);
+  --destructive: oklch(0.58 0.22 27.2);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.928 0.006 264);
+  --input: oklch(0.928 0.006 264);
+  --ring: oklch(0.546 0.245 262.881);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background: var(--page);
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* hide scrollbars inside the phone screen for a native-app feel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
