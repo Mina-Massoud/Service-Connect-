@@ -11,6 +11,8 @@ interface PhoneStageProps {
   instructorRef: RefObject<HTMLIFrameElement | null>;
   learnerInitial: string;
   instructorInitial: string;
+  /** Bump to force both iframes to fully reload (used by Restart). */
+  reloadKey: number;
 }
 
 const SCREEN_W = 300;
@@ -21,6 +23,7 @@ interface DeviceProps {
   iframeRef: RefObject<HTMLIFrameElement | null>;
   initial: string;
   title: string;
+  reloadKey: number;
 }
 
 /**
@@ -28,7 +31,14 @@ interface DeviceProps {
  * Both devices stay on screen; the one that isn't the focus blurs and dims so
  * the active side reads clearly while the pair stays visible.
  */
-function Device({ label, active, iframeRef, initial, title }: DeviceProps) {
+function Device({
+  label,
+  active,
+  iframeRef,
+  initial,
+  title,
+  reloadKey,
+}: DeviceProps) {
   return (
     <motion.div
       className="flex flex-col items-center gap-3"
@@ -61,6 +71,7 @@ function Device({ label, active, iframeRef, initial, title }: DeviceProps) {
         hideStatusBar
       >
         <iframe
+          key={reloadKey}
           ref={iframeRef}
           src={initial}
           title={title}
@@ -77,6 +88,7 @@ export function PhoneStage({
   instructorRef,
   learnerInitial,
   instructorInitial,
+  reloadKey,
 }: PhoneStageProps) {
   return (
     <div className="flex items-center justify-center gap-5 md:gap-8">
@@ -86,6 +98,7 @@ export function PhoneStage({
         iframeRef={learnerRef}
         initial={learnerInitial}
         title="Learner device"
+        reloadKey={reloadKey}
       />
       <Device
         label="Publisher · Marco"
@@ -93,6 +106,7 @@ export function PhoneStage({
         iframeRef={instructorRef}
         initial={instructorInitial}
         title="Publisher device"
+        reloadKey={reloadKey}
       />
     </div>
   );

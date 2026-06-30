@@ -101,17 +101,18 @@ export default function ShowcasePage() {
         if (s.navInstructor) sendNav("instructor", s.navInstructor);
       }
 
-      // Always kill any running cursor. The demo cursor script only plays
-      // during autoplay — manual seeks land instantly on the screen + state
-      // with no animation, so Next/Prev are crisp and deterministic.
+      // Kill any running cursor, then play this scene's cursor. On a seek we
+      // first teleported to the scene's screen, so give the route a beat to
+      // render before the cursor starts hunting for elements.
       postToFrame("learner", { type: "sc-demo-off" });
       postToFrame("instructor", { type: "sc-demo-off" });
-      if (s.demo && !seek) {
+      if (s.demo) {
         const device: Device = s.focus === "learner" ? "learner" : "instructor";
         const script = s.demo;
-        window.setTimeout(() => {
-          postToFrame(device, { type: "sc-demo", script });
-        }, 250);
+        window.setTimeout(
+          () => postToFrame(device, { type: "sc-demo", script }),
+          seek ? 650 : 250,
+        );
       }
     },
     [seqKey, scenes, sendNav, postToFrame],
@@ -202,9 +203,13 @@ export default function ShowcasePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, playing, runId, seqKey]);
 
+  // Restart / sequence switch = full reset: reseed, reload both iframes (the
+  // runId bump remounts them), and autoplay from scene 0 with the cursor.
   const restart = useCallback(() => {
     seedReset();
-    seekRef.current = true;
+    ready.current = { learner: false, instructor: false };
+    pendingNav.current = {};
+    seekRef.current = false;
     setIndex(0);
     setPlaying(true);
     setRunId((n) => n + 1);
@@ -213,7 +218,9 @@ export default function ShowcasePage() {
   const selectSequence = useCallback(
     (key: SequenceKey) => {
       seedReset();
-      seekRef.current = true;
+      ready.current = { learner: false, instructor: false };
+      pendingNav.current = {};
+      seekRef.current = false;
       setSeqKey(key);
       setIndex(0);
       setPlaying(true);
@@ -222,16 +229,36 @@ export default function ShowcasePage() {
     [seedReset],
   );
 
-  const togglePlay = useCallback(() => setPlaying((p) => !p), []);
+  const togglePlay = useCallback(() => {
+    const nextPlaying = !playingRef.current;
+    setPlaying(nextPlaying);
+    if (!nextPlaying) {
+      // Pause: stop the cursor where it is.
+      postToFrame("learner", { type: "sc-demo-off" });
+      postToFrame("instructor", { type: "sc-demo-off" });
+    } else {
+      // Resume: replay the current scene's cursor from the top.
+      const s = sceneRef.current;
+      if (s.demo) {
+        const device: Device = s.focus === "learner" ? "learner" : "instructor";
+        const script = s.demo;
+        window.setTimeout(() => {
+          postToFrame(device, { type: "sc-demo", script });
+        }, 200);
+      }
+    }
+  }, [postToFrame]);
 
+  // Next/Prev jump to the adjacent slide and keep playing — the jumped-to
+  // scene's cursor plays, then the timeline continues from there.
   const next = useCallback(() => {
-    setPlaying(false);
+    setPlaying(true);
     seekRef.current = true;
     setIndex((i) => Math.min(scenes.length - 1, i + 1));
   }, [scenes.length]);
 
   const prev = useCallback(() => {
-    setPlaying(false);
+    setPlaying(true);
     seekRef.current = true;
     setIndex((i) => Math.max(0, i - 1));
   }, []);
@@ -287,6 +314,7 @@ export default function ShowcasePage() {
             instructorRef={instructorRef}
             learnerInitial={LEARNER_HOME}
             instructorInitial={INSTRUCTOR_HOME}
+            reloadKey={runId}
           />
         </div>
 
