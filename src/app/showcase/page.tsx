@@ -1,19 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
-import { PhoneStage, STAGE_NATURAL } from "@/components/showcase/PhoneStage";
-import { SubtitleBar } from "@/components/showcase/SubtitleBar";
+import { AnimatePresence, motion } from "framer-motion";
+import { PhoneStage } from "@/components/showcase/PhoneStage";
 import { ShowcaseControls } from "@/components/showcase/ShowcaseControls";
 import { sequences, type SequenceKey, type Scene } from "@/lib/showcase/scenes";
 import { createSeedState } from "@/lib/store/seed";
 import { savePersisted, clearPersisted } from "@/lib/store/persistence";
 import type { AppState } from "@/lib/store/types";
 
-const LEARNER_HOME = "/home";
-const INSTRUCTOR_HOME = "/instructor";
+// Both devices boot at the welcome screen so the cursor can walk in from the
+// very start (sign up / log in) rather than teleporting into the app.
+const LEARNER_HOME = "/";
+const INSTRUCTOR_HOME = "/";
 
 type Device = "learner" | "instructor";
 
@@ -22,15 +21,12 @@ export default function ShowcasePage() {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [runId, setRunId] = useState(0);
-  const [chromeVisible, setChromeVisible] = useState(true);
 
   const scenes: readonly Scene[] = sequences[seqKey].scenes;
   const scene = scenes[Math.min(index, scenes.length - 1)];
 
   const learnerRef = useRef<HTMLIFrameElement | null>(null);
   const instructorRef = useRef<HTMLIFrameElement | null>(null);
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const [fitScale, setFitScale] = useState(1);
   const directorState = useRef<AppState>(createSeedState());
   const ready = useRef<Record<Device, boolean>>({
     learner: false,
@@ -38,6 +34,13 @@ export default function ShowcasePage() {
   });
   const pendingNav = useRef<Partial<Record<Device, string>>>({});
   const applied = useRef<Set<string>>(new Set());
+  // True for the next applyScene when the index change came from a manual
+  // seek (next/prev/restart/sequence) — forces a teleport to the scene's route.
+  const seekRef = useRef(false);
+  // Mirrors of the active scene + playing state, readable inside the (stable)
+  // ready-handshake listener so it can (re)start the cursor on cold loads.
+  const sceneRef = useRef(scenes[0]);
+  const playingRef = useRef(true);
 
   const sendNav = useCallback((device: Device, path: string) => {
     const frame =
@@ -52,6 +55,12 @@ export default function ShowcasePage() {
     }
   }, []);
 
+  const postToFrame = useCallback((device: Device, data: unknown) => {
+    const frame =
+      device === "learner" ? learnerRef.current : instructorRef.current;
+    frame?.contentWindow?.postMessage(data, window.location.origin);
+  }, []);
+
   const seedReset = useCallback(() => {
     clearPersisted();
     directorState.current = createSeedState();
@@ -60,17 +69,52 @@ export default function ShowcasePage() {
   }, []);
 
   const applyScene = useCallback(
-    (s: Scene) => {
+    (s: Scene, seek = false) => {
+      // On a manual seek, rebuild state from seed by replaying every director
+      // up to and including this scene, so jumping back/forward is consistent.
+      if (seek) {
+        let st = createSeedState();
+        applied.current.clear();
+        const upto = scenes.indexOf(s);
+        for (let i = 0; i <= upto; i++) {
+          const d = scenes[i].director;
+          if (d) {
+            st = d(st);
+            applied.current.add(`${seqKey}:${scenes[i].id}`);
+          }
+        }
+        directorState.current = st;
+        savePersisted(st);
+      }
+
       const key = `${seqKey}:${s.id}`;
       if (s.director && !applied.current.has(key)) {
         directorState.current = s.director(directorState.current);
         savePersisted(directorState.current);
         applied.current.add(key);
       }
-      if (s.navLearner) sendNav("learner", s.navLearner);
-      if (s.navInstructor) sendNav("instructor", s.navInstructor);
+      // During autoplay, selfNav scenes navigate via the cursor (walk shown),
+      // so the parent skips the teleport. Manual seeks always teleport so they
+      // land on the right screen even when jumping around.
+      if (seek || !s.selfNav) {
+        if (s.navLearner) sendNav("learner", s.navLearner);
+        if (s.navInstructor) sendNav("instructor", s.navInstructor);
+      }
+
+      // Always kill any running cursor. The demo cursor script only plays
+      // during autoplay — manual seeks land instantly on the screen + state
+      // with no animation, so Next/Prev are crisp and deterministic.
+      postToFrame("learner", { type: "sc-demo-off" });
+      postToFrame("instructor", { type: "sc-demo-off" });
+      if (s.demo && !seek) {
+        const device: Device = s.focus === "learner" ? "learner" : "instructor";
+        const script = s.demo;
+        window.setTimeout(() => {
+          postToFrame(device, { type: "sc-demo", script });
+        }, 250);
+      }
     },
-    [seqKey, sendNav],
+    [seqKey, scenes, sendNav, postToFrame],
   );
 
   // iframe readiness handshake + initial seed.
@@ -92,117 +136,104 @@ export default function ShowcasePage() {
         sendNav(device, queued);
         delete pendingNav.current[device];
       }
+      // Cold-load race fix: the very first sc-demo can be posted before this
+      // iframe's DemoDriver listener exists. When the iframe (re)announces it's
+      // ready, (re)start the active scene's cursor on the focused device.
+      const cur = sceneRef.current;
+      const focusDevice: Device =
+        cur.focus === "learner" ? "learner" : "instructor";
+      if (playingRef.current && cur.demo && focusDevice === device) {
+        const script = cur.demo;
+        window.setTimeout(() => {
+          postToFrame(device, { type: "sc-demo", script });
+        }, 500);
+      }
     };
     window.addEventListener("message", onMessage);
     seedReset();
     return () => window.removeEventListener("message", onMessage);
-  }, [seedReset, sendNav]);
+  }, [seedReset, sendNav, postToFrame]);
+
+  // Keep refs current for the ready-handshake listener.
+  useEffect(() => {
+    sceneRef.current = scene;
+    playingRef.current = playing;
+  });
 
   // Apply the scene (navigation + state) whenever the active scene changes.
   useEffect(() => {
-    applyScene(scenes[index]);
+    applyScene(scenes[index], seekRef.current);
+    seekRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, runId, seqKey]);
 
-  // Advance the timeline while playing.
+  const advance = useCallback(() => {
+    setIndex((i) => {
+      if (i < scenes.length - 1) return i + 1;
+      setPlaying(false);
+      return i;
+    });
+  }, [scenes.length]);
+
+  // Advance the timeline while playing. Scripted scenes get a long fallback
+  // timeout — they normally advance early on the driver's `demo:done` event.
   useEffect(() => {
     if (!playing) return;
     const current = scenes[index];
-    const t = window.setTimeout(() => {
-      if (index < scenes.length - 1) {
-        setIndex((i) => i + 1);
-      } else {
-        setPlaying(false);
-      }
-    }, current.durationMs);
+    const ms = current.demo
+      ? Math.max(current.durationMs, 16000)
+      : current.durationMs;
+    const t = window.setTimeout(advance, ms);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, playing, runId, seqKey]);
 
-  // Auto-hide the chrome while playing for clean recording. Chrome is always
-  // shown while paused (derived below), so this effect only runs the idle timer.
+  // Event-driven advance: when the focused device finishes its script, move on.
   useEffect(() => {
     if (!playing) return;
-    let timer = window.setTimeout(() => setChromeVisible(false), 2600);
-    const wake = () => {
-      setChromeVisible(true);
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => setChromeVisible(false), 2600);
+    const onDone = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const data = e.data as { type?: string; script?: string };
+      if (data?.type !== "demo:done") return;
+      if (data.script && data.script === scenes[index]?.demo) advance();
     };
-    window.addEventListener("mousemove", wake);
-    return () => {
-      window.removeEventListener("mousemove", wake);
-      window.clearTimeout(timer);
-    };
-  }, [playing]);
-
-  const showChrome = !playing || chromeVisible;
+    window.addEventListener("message", onDone);
+    return () => window.removeEventListener("message", onDone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, playing, runId, seqKey]);
 
   const restart = useCallback(() => {
     seedReset();
+    seekRef.current = true;
     setIndex(0);
     setPlaying(true);
-    setChromeVisible(true);
     setRunId((n) => n + 1);
   }, [seedReset]);
 
   const selectSequence = useCallback(
     (key: SequenceKey) => {
       seedReset();
+      seekRef.current = true;
       setSeqKey(key);
       setIndex(0);
       setPlaying(true);
-      setChromeVisible(true);
       setRunId((n) => n + 1);
     },
     [seedReset],
   );
 
-  const togglePlay = useCallback(() => {
-    setChromeVisible(true);
-    setPlaying((p) => !p);
-  }, []);
+  const togglePlay = useCallback(() => setPlaying((p) => !p), []);
 
   const next = useCallback(() => {
-    setChromeVisible(true);
     setPlaying(false);
+    seekRef.current = true;
     setIndex((i) => Math.min(scenes.length - 1, i + 1));
   }, [scenes.length]);
 
   const prev = useCallback(() => {
-    setChromeVisible(true);
     setPlaying(false);
+    seekRef.current = true;
     setIndex((i) => Math.max(0, i - 1));
-  }, []);
-
-  // Scale the two-device stage to fit the available area (devices keep their
-  // real 390px render width, so app layouts never get cramped).
-  useEffect(() => {
-    const el = stageRef.current;
-    if (!el) return;
-    const compute = () => {
-      const r = el.getBoundingClientRect();
-      if (r.width < 10 || r.height < 10) return;
-      const pad = 48;
-      const s = Math.min(
-        (r.width - pad) / STAGE_NATURAL.width,
-        (r.height - pad) / STAGE_NATURAL.height,
-        1,
-      );
-      setFitScale(s > 0.2 ? s : 0.2);
-    };
-    compute();
-    const raf = requestAnimationFrame(compute);
-    const t = window.setTimeout(compute, 250);
-    const ro = new ResizeObserver(compute);
-    ro.observe(el);
-    window.addEventListener("resize", compute);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(t);
-      window.removeEventListener("resize", compute);
-      ro.disconnect();
-    };
   }, []);
 
   // Keyboard: ← / → to step scenes, Space to play/pause.
@@ -220,128 +251,109 @@ export default function ShowcasePage() {
   }, [next, prev, togglePlay]);
 
   return (
-    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-neutral-950">
-      {/* ambient backdrop */}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/3 -z-0 h-[600px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
-        animate={{
-          background: [
-            "radial-gradient(circle, rgba(37,99,235,0.30), transparent 60%)",
-            "radial-gradient(circle, rgba(124,58,237,0.30), transparent 60%)",
-            "radial-gradient(circle, rgba(37,99,235,0.30), transparent 60%)",
-          ],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.85))]" />
-
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
       {/* top bar */}
-      <motion.header
-        className="relative z-10 flex items-center justify-between px-6 py-4"
-        animate={{ opacity: showChrome ? 1 : 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <Link
-          href="/"
-          className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-white/80 backdrop-blur transition-colors hover:bg-white/10"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Exit
-        </Link>
-        <p className="text-sm font-semibold tracking-tight text-white/80">
-          ServiceConnect — Demo Reel
-        </p>
-        <div className="w-16" />
-      </motion.header>
 
-      {/* stage (clips so zoom never overlaps the subtitles) */}
-      <div
-        ref={stageRef}
-        className="relative z-0 flex min-h-0 flex-1 items-center justify-center overflow-hidden"
-      >
-        {/* Outer box takes the SCALED layout size so flex centering stays
-            correct; the inner natural-size stage is transform-scaled from its
-            top-left to exactly fill it. */}
-        <div
-          style={{
-            width: STAGE_NATURAL.width * fitScale,
-            height: STAGE_NATURAL.height * fitScale,
-          }}
-        >
-          <div
-            style={{
-              width: STAGE_NATURAL.width,
-              height: STAGE_NATURAL.height,
-              transform: `scale(${fitScale})`,
-              transformOrigin: "top left",
-            }}
-          >
-            <PhoneStage
-              focus={scene.focus}
-              zoom={scene.zoom ?? 1}
-              focusY={scene.focusY ?? 0.5}
-              learnerRef={learnerRef}
-              instructorRef={instructorRef}
-              learnerInitial={LEARNER_HOME}
-              instructorInitial={INSTRUCTOR_HOME}
-            />
-          </div>
+      {/* stage: [ left text | phones | right text ] */}
+      <main className="grid min-h-0 flex-1 grid-cols-1 items-center gap-6 px-8 py-4 xl:grid-cols-[1fr_auto_1fr] xl:gap-10 xl:px-12">
+        {/* LEFT — headline */}
+        <div className="hidden xl:flex xl:justify-end">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`cap-${scene.id}`}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-xs text-right"
+            >
+              {scene.chapter && (
+                <p className="mb-3 text-xs font-bold uppercase text-primary">
+                  {scene.chapter}
+                </p>
+              )}
+              <h2 className="text-balance text-3xl font-bold leading-tight tracking-tight text-foreground xl:text-4xl">
+                {scene.caption}
+              </h2>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        {/* prev / next arrows */}
-        <motion.button
-          type="button"
-          onClick={prev}
-          disabled={index === 0}
-          aria-label="Previous scene"
-          className="absolute left-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60 disabled:opacity-30 md:left-8"
-          animate={{ opacity: showChrome ? 1 : 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </motion.button>
-        <motion.button
-          type="button"
-          onClick={next}
-          disabled={index === scenes.length - 1}
-          aria-label="Next scene"
-          className="absolute right-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white backdrop-blur transition-colors hover:bg-black/60 disabled:opacity-30 md:right-8"
-          animate={{ opacity: showChrome ? 1 : 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <ChevronRight className="h-6 w-6" />
-        </motion.button>
-      </div>
+        {/* CENTER — phones */}
+        <div className="flex items-center justify-center">
+          <PhoneStage
+            focus={scene.focus}
+            learnerRef={learnerRef}
+            instructorRef={instructorRef}
+            learnerInitial={LEARNER_HOME}
+            instructorInitial={INSTRUCTOR_HOME}
+          />
+        </div>
 
-      {/* subtitles */}
-      <div className="relative z-10">
-        <SubtitleBar
-          sceneId={scene.id}
-          chapter={scene.chapter}
-          caption={scene.caption}
-          sub={scene.sub}
-        />
-      </div>
+        {/* RIGHT — detail */}
+        <div className="hidden xl:flex xl:justify-start">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`sub-${scene.id}`}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-xs text-left"
+            >
+              {scene.sub && (
+                <p className="text-balance text-lg leading-relaxed text-muted-foreground">
+                  {scene.sub}
+                </p>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Small screens: caption below the phones */}
+        <div className="text-center xl:hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`m-${scene.id}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
+            >
+              {scene.chapter && (
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+                  {scene.chapter}
+                </p>
+              )}
+              <h2 className="text-balance text-xl font-bold tracking-tight text-foreground">
+                {scene.caption}
+              </h2>
+              {scene.sub && (
+                <p className="mx-auto mt-2 max-w-md text-balance text-sm text-muted-foreground">
+                  {scene.sub}
+                </p>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
 
       {/* controls */}
-      <motion.div
-        className="relative z-10 flex justify-center px-6 pb-8 pt-4"
-        animate={{ opacity: showChrome ? 1 : 0, y: showChrome ? 0 : 12 }}
-        transition={{ duration: 0.4 }}
-      >
+      <div className="flex shrink-0 justify-center px-6 pb-7 pt-3">
         <ShowcaseControls
           seqKey={seqKey}
           onSelectSequence={selectSequence}
           playing={playing}
           onPlayPause={togglePlay}
           onRestart={restart}
+          onPrev={prev}
+          onNext={next}
           index={index}
           total={scenes.length}
           sceneKey={`${runId}-${scene.id}`}
           sceneDurationMs={scene.durationMs}
         />
-      </motion.div>
+      </div>
     </div>
   );
 }

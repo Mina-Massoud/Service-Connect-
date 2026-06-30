@@ -32,8 +32,8 @@ function StatInline({ label, value, unit }: StatInlineProps) {
   return (
     <div className="flex-1 rounded-xl bg-white/15 px-2 py-2 text-center">
       <p className="text-xl font-bold text-white">{value}</p>
-      <p className="text-[10px] text-blue-100">{unit}</p>
-      <p className="mt-0.5 text-[10px] text-blue-200">{label}</p>
+      <p className="text-[10px] text-white/75">{unit}</p>
+      <p className="mt-0.5 text-[10px] text-white/60">{label}</p>
     </div>
   );
 }
@@ -74,8 +74,8 @@ export default function InstructorDashboardPage() {
       </div>
 
       {/* Earnings hero card */}
-      <div className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 to-blue-500 p-5 text-white shadow-md">
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-blue-100">
+      <div className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-[#E61E4D] via-[#E31C5F] to-[#FF385C] p-5 text-white shadow-md">
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-white/70">
           This Month&apos;s Earnings
         </p>
         <p className="mb-4 text-4xl font-bold tracking-tight">

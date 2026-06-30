@@ -91,8 +91,8 @@ export default function WalletPage() {
       activeTab="wallet"
     >
       {/* ── Balance hero card ── */}
-      <div className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 to-blue-500 p-5 text-white shadow-md">
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-blue-100">
+      <div className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-[#E61E4D] via-[#E31C5F] to-[#FF385C] p-5 text-white shadow-md">
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-white/70">
           Available Balance
         </p>
         <p className="mb-4 text-4xl font-bold tracking-tight">
@@ -101,13 +101,13 @@ export default function WalletPage() {
 
         <div className="mb-4 flex gap-6">
           <div>
-            <p className="text-[11px] text-blue-200">Pending</p>
+            <p className="text-[11px] text-white/70">Pending</p>
             <p className="text-base font-semibold">
               ${pending.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div>
-            <p className="text-[11px] text-blue-200">Lifetime Earned</p>
+            <p className="text-[11px] text-white/70">Lifetime Earned</p>
             <p className="text-base font-semibold">
               ${lifetime.toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </p>
@@ -132,6 +132,7 @@ export default function WalletPage() {
           <button
             type="button"
             aria-label="Add new bank account"
+            data-demo="wallet-add-bank-btn"
             onClick={() => setAddBankOpen(true)}
             className="flex items-center gap-1 text-xs font-semibold text-primary"
           >
@@ -267,6 +268,7 @@ export default function WalletPage() {
               <Label htmlFor="add-bank-name">Bank Name</Label>
               <Input
                 id="add-bank-name"
+                data-demo="wallet-bank-name"
                 type="text"
                 placeholder="e.g. Chase, Bank of America"
                 value={bankName}
@@ -279,6 +281,7 @@ export default function WalletPage() {
               <Label htmlFor="add-bank-last4">Last 4 Digits</Label>
               <Input
                 id="add-bank-last4"
+                data-demo="wallet-bank-last4"
                 type="text"
                 inputMode="numeric"
                 placeholder="1234"
@@ -293,6 +296,7 @@ export default function WalletPage() {
 
           <DialogFooter>
             <Button
+              data-demo="wallet-add-account-confirm"
               className="h-10 w-full rounded-xl font-semibold"
               disabled={!bankName.trim() || last4.length !== 4}
               onClick={handleAddBank}

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppStateProvider } from "@/lib/store";
 import { TourBridge } from "@/components/showcase/TourBridge";
+import { DemoDriver } from "@/components/showcase/DemoDriver";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className="min-h-full antialiased">
         <AppStateProvider>
           <TourBridge />
+          <DemoDriver />
           {children}
         </AppStateProvider>
       </body>

@@ -61,6 +61,7 @@ export default function ProfileSetupPage() {
       header={<ScreenHeader title="Profile Setup" />}
       footer={
         <Button
+          data-demo="profile-continue-btn"
           className="h-12 w-full rounded-xl text-base font-semibold"
           onClick={handleContinue}
         >
@@ -106,6 +107,7 @@ export default function ProfileSetupPage() {
           </div>
           <Textarea
             id="bio"
+            data-demo="profile-bio"
             placeholder="Tell clients about your skills, values, and why they should book you..."
             className="min-h-[96px] resize-none"
             value={bio}
@@ -128,6 +130,7 @@ export default function ProfileSetupPage() {
             />
             <Input
               id="location"
+              data-demo="profile-location"
               placeholder="City, State"
               className="h-11 pl-9"
               value={location}
@@ -180,6 +183,7 @@ export default function ProfileSetupPage() {
                 key={value}
                 type="button"
                 role="radio"
+                data-demo={`profile-role-${value}`}
                 aria-checked={role === value}
                 onClick={() => handleRoleSelect(value)}
                 className={cn(

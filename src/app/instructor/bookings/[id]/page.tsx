@@ -30,6 +30,7 @@ function BookingFooter({
     return (
       <div className="flex flex-col gap-2">
         <Button
+          data-demo="booking-accept-btn"
           className="h-12 w-full rounded-xl text-base font-semibold"
           onClick={onAccept}
         >
@@ -65,6 +66,7 @@ function BookingFooter({
     return (
       <div className="flex flex-col gap-2">
         <Button
+          data-demo="booking-start-btn"
           className="h-12 w-full rounded-xl text-base font-semibold"
           onClick={onStart}
         >
@@ -84,6 +86,7 @@ function BookingFooter({
   if (status === "in_progress") {
     return (
       <Button
+        data-demo="booking-complete-btn"
         className="h-12 w-full rounded-xl text-base font-semibold"
         onClick={onComplete}
       >

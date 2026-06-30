@@ -9,192 +9,280 @@ export interface Scene {
   sub?: string;
   durationMs: number;
   focus: FocusTarget;
-  /** Extra cinematic zoom applied to the focused device (1 = none). */
-  zoom?: number;
-  /** Vertical bias of the zoom, 0 (top) … 1 (bottom). Default 0.5. */
-  focusY?: number;
-  /** Route to push into each device (omit to leave it where it was). */
+  /** Route the reel pushes into a device (for screens not reached by a tap). */
   navLearner?: string;
   navInstructor?: string;
   /** Optional real state mutation, applied via the store reducer. */
   director?: (s: AppState) => AppState;
-  /** Chapter label shown in the corner. */
+  /** Named DemoDriver script (cursor walks + types) for the focused device. */
+  demo?: string;
+  /**
+   * The scene's own demo script navigates here via cursor taps. During
+   * autoplay the reel skips the parent nav so the walk is visible; manual
+   * seeks (next/prev) still teleport to the route so they land correctly.
+   */
+  selfNav?: boolean;
+  /** Chapter label shown beside the phones. */
   chapter?: string;
 }
 
-const HERO = "bk-1024"; // Alex's deep-cleaning booking (seeded as escrow_held)
+const HERO = "bk-1024"; // Alex's fishing booking (seeded as escrow_held, newest)
 
+// ── State directors ────────────────────────────────────────────────
+const setVerified = (s: AppState): AppState =>
+  reducer(s, { type: "SET_VERIFIED", verified: true });
+const connectBank = (s: AppState): AppState =>
+  reducer(s, {
+    type: "ADD_BANK",
+    bank: {
+      id: "ba-demo",
+      bankName: "Chase Premier Checking",
+      last4: "8421",
+      primary: false,
+    },
+  });
+const approveListing = (s: AppState): AppState =>
+  reducer(s, { type: "APPROVE_LISTING", listingId: "move-out-cleaning" });
 const accept = (s: AppState): AppState =>
   reducer(s, { type: "ACCEPT_BOOKING", bookingId: HERO });
+const startSession = (s: AppState): AppState =>
+  reducer(s, { type: "START_SESSION", bookingId: HERO });
 const complete = (s: AppState): AppState =>
   reducer(s, { type: "COMPLETE_BOOKING", bookingId: HERO });
 
-// ── Learner journey ────────────────────────────────────────────────
-const learnerScenes: Scene[] = [
+// ── Act 1 — Marco becomes a publisher ──────────────────────────────
+const onboardingScenes: Scene[] = [
   {
-    id: "l-meet",
-    chapter: "The Learner",
-    caption: "Meet Alex.",
-    sub: "He wants to learn a new skill this weekend.",
-    focus: "learner",
-    zoom: 1.04,
-    navLearner: "/home",
+    id: "p-signup",
+    chapter: "Becoming a Publisher",
+    caption: "Marco joins ServiceConnect.",
+    sub: "He creates his account.",
+    focus: "instructor",
+    navInstructor: "/auth",
+    demo: "signup",
+    durationMs: 8000,
+  },
+  {
+    id: "p-profile",
+    chapter: "Becoming a Publisher",
+    caption: "He sets up his profile.",
+    sub: "Chooses to teach, then adds a bio and where he's based.",
+    focus: "instructor",
+    navInstructor: "/onboarding/profile",
+    demo: "onboard-profile",
+    durationMs: 8500,
+  },
+  {
+    id: "p-verify",
+    chapter: "Identity Verification",
+    caption: "He proves who he is.",
+    sub: "A government ID and a live selfie — the trust step every publisher passes.",
+    focus: "instructor",
+    navInstructor: "/onboarding/verify",
+    demo: "verify",
+    director: setVerified,
+    durationMs: 7000,
+  },
+  {
+    id: "p-verified",
+    chapter: "Identity Verification",
+    caption: "Verified ✓",
+    sub: "Now a trusted publisher — cleared to publish and to get paid.",
+    focus: "instructor",
+    navInstructor: "/instructor",
     durationMs: 4200,
   },
   {
-    id: "l-explore",
-    chapter: "The Learner",
-    caption: "He explores the marketplace.",
-    sub: "Search by skill, browse categories, discover mentors.",
-    focus: "learner",
-    zoom: 1.28,
-    focusY: 0.12,
-    navLearner: "/home",
+    id: "p-bank",
+    chapter: "Becoming a Publisher",
+    caption: "He connects his payout account.",
+    sub: "Earnings → Add bank, so escrow can release to him.",
+    focus: "instructor",
+    navInstructor: "/wallet",
+    selfNav: true,
+    demo: "connect-bank",
+    director: connectBank,
+    durationMs: 9000,
+  },
+  {
+    id: "p-create",
+    chapter: "Becoming a Publisher",
+    caption: "Time to list a service.",
+    sub: "Profile → Create a Listing.",
+    focus: "instructor",
+    navInstructor: "/create-service",
+    selfNav: true,
+    demo: "go-create",
+    durationMs: 5500,
+  },
+  {
+    id: "p-publish",
+    chapter: "Becoming a Publisher",
+    caption: "He fills in the details.",
+    sub: "Sunset Inshore Fishing Trip — title, price, and schedule.",
+    focus: "instructor",
+    navInstructor: "/create-service",
+    demo: "publish",
+    durationMs: 9500,
+  },
+  {
+    id: "p-review",
+    chapter: "Becoming a Publisher",
+    caption: "A quick quality review.",
+    sub: "Verified for safety, then approved.",
+    focus: "instructor",
+    navInstructor: "/admin/review/move-out-cleaning",
+    director: approveListing,
+    durationMs: 4500,
+  },
+  {
+    id: "p-published",
+    chapter: "Becoming a Publisher",
+    caption: "And it's live on the marketplace.",
+    sub: "Ready for learners to discover and book.",
+    focus: "instructor",
+    navInstructor: "/service-published",
     durationMs: 4000,
+  },
+];
+
+// ── Act 2 — Alex books ─────────────────────────────────────────────
+const learnerScenes: Scene[] = [
+  {
+    id: "l-login",
+    chapter: "The Learner",
+    caption: "Meet Alex.",
+    sub: "He signs in to find a class this weekend.",
+    focus: "learner",
+    navLearner: "/",
+    selfNav: true,
+    demo: "learner-login",
+    durationMs: 7500,
   },
   {
     id: "l-find",
     chapter: "The Learner",
-    caption: "He finds a 5-star class.",
-    sub: "Professional Deep-Home Cleaning · 4.9 ★ · Verified mentor.",
+    caption: "He finds Marco's class.",
+    sub: "Deep-Sea Fishing for Beginners · 4.9 ★ · Verified mentor.",
     focus: "learner",
-    zoom: 1.06,
-    navLearner: "/service/deep-cleaning",
-    durationMs: 4400,
+    navLearner: "/home",
+    demo: "learner-find",
+    durationMs: 5500,
   },
   {
     id: "l-book",
     chapter: "The Learner",
-    caption: "Picks a time and books in a tap.",
-    sub: "Choose a date, a slot, the quantity — done.",
+    caption: "He books in a tap.",
+    sub: "Picks a time and taps Book Now.",
     focus: "learner",
-    zoom: 1.32,
-    focusY: 0.58,
     navLearner: "/service/deep-cleaning",
-    durationMs: 4400,
+    demo: "book",
+    durationMs: 4800,
   },
   {
-    id: "l-review",
-    chapter: "The Learner",
-    caption: "Transparent pricing.",
-    sub: "Service price and platform fee — no surprises.",
-    focus: "learner",
-    zoom: 1.12,
-    navLearner: `/booking/${HERO}/review`,
-    durationMs: 4200,
-  },
-  {
-    id: "l-escrow",
+    id: "l-pay",
     chapter: "The Learner",
     caption: "Paid safely into escrow.",
     sub: "Funds are held securely until the session is complete.",
     focus: "learner",
-    zoom: 1.12,
-    navLearner: `/booking/${HERO}/payment-secured`,
-    durationMs: 4400,
+    navLearner: `/booking/${HERO}/review`,
+    demo: "pay",
+    durationMs: 5000,
   },
 ];
 
-// ── Publisher / instructor journey ─────────────────────────────────
-const publisherScenes: Scene[] = [
-  {
-    id: "p-meet",
-    chapter: "The Publisher",
-    caption: "Meet Marco.",
-    sub: "He earns by teaching what he already knows.",
-    focus: "instructor",
-    zoom: 1.04,
-    navInstructor: "/instructor",
-    durationMs: 4200,
-  },
+// ── Act 3 — The transaction ────────────────────────────────────────
+const transactionScenes: Scene[] = [
   {
     id: "p-request",
-    chapter: "The Publisher",
-    caption: "A new booking lands — live.",
-    sub: "Alex's request shows up the moment it's paid.",
+    chapter: "The Transaction",
+    caption: "Marco gets the request — live.",
+    sub: "Alex's paid booking appears the instant it's made.",
     focus: "instructor",
-    zoom: 1.26,
-    focusY: 0.44,
     navInstructor: "/instructor",
-    durationMs: 4200,
+    durationMs: 4500,
   },
   {
-    id: "p-detail",
-    chapter: "The Publisher",
-    caption: "He reviews the request.",
-    sub: "Schedule, student note, and his $68 payout.",
+    id: "p-open",
+    chapter: "The Transaction",
+    caption: "He opens the request.",
+    sub: "Bookings → the newest request.",
     focus: "instructor",
-    zoom: 1.1,
-    navInstructor: `/instructor/bookings/${HERO}`,
-    durationMs: 4400,
+    navInstructor: "/instructor/bookings",
+    selfNav: true,
+    demo: "go-bookings",
+    durationMs: 6000,
   },
   {
     id: "p-accept",
-    chapter: "The Publisher",
-    caption: "One tap to accept.",
-    sub: "Marco confirms the session.",
+    chapter: "The Transaction",
+    caption: "He accepts the booking.",
+    sub: "He could decline — instead he confirms the trip.",
     focus: "instructor",
-    zoom: 1.22,
-    focusY: 0.82,
     navInstructor: `/instructor/bookings/${HERO}`,
+    demo: "accept",
     director: accept,
-    durationMs: 4200,
-  },
-  {
-    id: "p-sync",
-    chapter: "In Sync",
-    caption: "Watch Alex's order update — instantly.",
-    sub: "Both sides stay perfectly in sync, in real time.",
-    focus: "learner",
-    zoom: 1.16,
-    navLearner: `/orders/${HERO}`,
     durationMs: 5000,
   },
   {
+    id: "p-start",
+    chapter: "The Transaction",
+    caption: "Session day — he starts the trip.",
+    sub: "The booking moves to in-progress for both sides.",
+    focus: "instructor",
+    navInstructor: `/instructor/bookings/${HERO}`,
+    demo: "start",
+    director: startSession,
+    durationMs: 4600,
+  },
+  {
     id: "p-complete",
-    chapter: "In Sync",
-    caption: "The session wraps up.",
-    sub: "Completion is confirmed and escrow releases automatically.",
-    focus: "learner",
-    zoom: 1.12,
-    navLearner: `/orders/${HERO}/completion`,
+    chapter: "The Transaction",
+    caption: "Session complete.",
+    sub: "Escrow releases automatically — no chasing payments.",
+    focus: "instructor",
+    navInstructor: `/instructor/bookings/${HERO}`,
+    demo: "complete",
     director: complete,
     durationMs: 4600,
   },
   {
     id: "p-wallet",
-    chapter: "The Publisher",
-    caption: "Funds land in Marco's wallet.",
-    sub: "Available to withdraw to his bank anytime.",
+    chapter: "The Transaction",
+    caption: "The money lands in his wallet.",
+    sub: "Cleared from escrow, ready to withdraw to the bank he connected.",
     focus: "instructor",
-    zoom: 1.16,
     navInstructor: "/wallet",
-    durationMs: 4400,
+    durationMs: 5500,
   },
 ];
 
 const finale: Scene = {
   id: "finale",
   chapter: "ServiceConnect",
-  caption: "Two sides. One seamless marketplace.",
+  caption: "Two sides. One trusted marketplace.",
   sub: "Learn from real people. Earn from real skills.",
   focus: "both",
-  zoom: 1,
   durationMs: 5200,
 };
 
 export const sequences = {
   full: {
     label: "Full Story",
-    scenes: [...learnerScenes, ...publisherScenes, finale],
+    scenes: [
+      ...onboardingScenes,
+      ...learnerScenes,
+      ...transactionScenes,
+      finale,
+    ],
+  },
+  publisher: {
+    label: "Publisher Flow",
+    scenes: [...onboardingScenes, ...transactionScenes, finale],
   },
   learner: {
     label: "Learner Flow",
     scenes: [...learnerScenes, finale],
-  },
-  publisher: {
-    label: "Publisher Flow",
-    scenes: [...publisherScenes, finale],
   },
 } as const;
 

@@ -45,12 +45,12 @@ export function useLearnerBookings(): BookingRecord[] {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
-/** Bookings for the instructor's services — "who booked my services". */
+/** Bookings for the instructor's services — "who booked my services" (newest first). */
 export function useInstructorBookings(): BookingRecord[] {
   const { state } = useApp();
   return state.bookings
     .filter((b) => b.providerId === state.session.instructor.id)
-    .sort((a, b) => a.createdAt - b.createdAt);
+    .sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export function useBooking(id: string | undefined): BookingRecord | undefined {

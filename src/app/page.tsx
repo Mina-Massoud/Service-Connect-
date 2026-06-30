@@ -59,11 +59,17 @@ export default function WelcomePage() {
               asChild
               className="h-12 w-full rounded-xl text-base font-semibold"
             >
-              <Link href="/auth">Get Started</Link>
+              <Link href="/auth" data-demo="welcome-get-started">
+                Get Started
+              </Link>
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/auth" className="font-semibold text-primary">
+              <Link
+                href="/auth"
+                data-demo="welcome-login"
+                className="font-semibold text-primary"
+              >
                 Log in
               </Link>
             </p>

@@ -119,6 +119,7 @@ export default function ServiceDetailPage() {
             </p>
           </div>
           <Button
+            data-demo="service-book-now-btn"
             onClick={handleBookNow}
             className="h-12 flex-1 rounded-xl text-base font-semibold"
           >

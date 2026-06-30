@@ -63,6 +63,7 @@ export function BottomNav({ active, role = "learner" }: BottomNavProps) {
             <li key={tab.id} className="flex-1">
               <Link
                 href={tab.href}
+                data-demo={`nav-${tab.id}`}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-medium transition-colors",
                   isActive

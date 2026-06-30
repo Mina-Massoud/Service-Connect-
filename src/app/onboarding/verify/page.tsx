@@ -41,6 +41,7 @@ export default function VerifyPage() {
       header={<ScreenHeader title="Verify your identity" />}
       footer={
         <Button
+          data-demo="verify-submit-btn"
           className="h-12 w-full rounded-xl text-base font-semibold"
           onClick={handleSubmit}
         >
@@ -112,6 +113,7 @@ export default function VerifyPage() {
 
               <Button
                 variant="outline"
+                data-demo="verify-upload-id"
                 className="mt-3 h-9 w-full rounded-xl text-sm"
                 onClick={() => setIdState("uploaded")}
                 aria-pressed={idState === "uploaded"}
@@ -158,6 +160,7 @@ export default function VerifyPage() {
 
               <Button
                 variant="outline"
+                data-demo="verify-take-selfie"
                 className="mt-3 h-9 w-full rounded-xl text-sm"
                 onClick={() => setSelfieState("uploaded")}
                 aria-pressed={selfieState === "uploaded"}

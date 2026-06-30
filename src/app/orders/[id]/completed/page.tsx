@@ -19,10 +19,10 @@ import { useBooking, useService, useActions } from "@/lib/store";
 import { getProvider } from "@/lib/mock-data";
 
 const SESSION_NOTES = [
-  "Covered the full top-to-bottom deep-clean checklist together.",
-  "Practiced the streak-free glass and mirror technique.",
-  "Recommended eco-friendly products list shared in chat.",
-  "Next step: try the 20-minute daily maintenance routine.",
+  "Covered rod rigging and three essential fishing knots.",
+  "Practiced casting and setting the hook from the deck.",
+  "Recommended tackle and bait list shared in chat.",
+  "Next step: try an early-morning tide for the best bite.",
 ];
 
 export default function ServiceCompletedPage() {

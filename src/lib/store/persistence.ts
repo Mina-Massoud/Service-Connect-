@@ -1,7 +1,7 @@
 import type { AppState } from "./types";
 
-const STORAGE_KEY = "serviceconnect:state:v2";
-const CHANNEL_NAME = "serviceconnect:sync:v2";
+const STORAGE_KEY = "serviceconnect:state:v3";
+const CHANNEL_NAME = "serviceconnect:sync:v3";
 
 export function loadPersisted(): AppState | null {
   if (typeof window === "undefined") return null;

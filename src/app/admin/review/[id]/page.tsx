@@ -61,6 +61,7 @@ export default function AdminReviewPage() {
       tone="muted"
       footer={
         <Button
+          data-demo="admin-publish-btn"
           className="h-12 w-full rounded-xl text-base font-semibold"
           onClick={handleApprove}
         >

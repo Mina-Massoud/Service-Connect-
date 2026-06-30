@@ -4,26 +4,26 @@ export const conversations: Conversation[] = [
   {
     id: "conv-marco",
     providerId: "marco",
-    serviceTitle: "Professional Deep Home Cleaning",
+    serviceTitle: "Deep-Sea Fishing for Beginners",
     messages: [
       {
         id: "m1",
         fromMe: false,
-        text: "Hi! Thanks for booking. Looking forward to our session on Monday 👋",
+        text: "Hi! Thanks for booking. Looking forward to getting you out on the water Monday 👋",
         time: "9:02 AM",
         type: "text",
       },
       {
         id: "m2",
         fromMe: true,
-        text: "Hi Marco! Excited to learn. Should I prepare anything beforehand?",
+        text: "Hi Marco! Excited to learn. Should I bring anything beforehand?",
         time: "9:05 AM",
         type: "text",
       },
       {
         id: "m3",
         fromMe: false,
-        text: "Just clear the kitchen counters and I'll bring all the supplies. Here's the checklist:",
+        text: "Just sunscreen and a light jacket — I'll bring all the rods and bait. Here's what to expect:",
         time: "9:06 AM",
         type: "text",
       },
@@ -32,7 +32,7 @@ export const conversations: Conversation[] = [
         fromMe: false,
         time: "9:06 AM",
         type: "document",
-        meta: "cleaning-checklist.pdf",
+        meta: "fishing-trip-guide.pdf",
       },
       {
         id: "m5",

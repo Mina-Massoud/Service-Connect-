@@ -14,7 +14,7 @@ export function BookingCard({ booking }: BookingCardProps) {
   const service = useService(booking.serviceId);
 
   return (
-    <Link href={`/instructor/bookings/${booking.id}`}>
+    <Link href={`/instructor/bookings/${booking.id}`} data-demo="booking-card">
       <div className="rounded-2xl border border-border bg-background p-4 shadow-sm transition-shadow hover:shadow-md">
         {/* Student row */}
         <div className="mb-3 flex items-center gap-3">

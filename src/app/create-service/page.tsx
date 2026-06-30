@@ -108,6 +108,23 @@ export default function CreateServicePage() {
     setLocationType(existing.locationType);
   }, [existing]);
 
+  // Demo mode (?demo=1, used by the showcase reel): auto-type and auto-select
+  // the form fields to simulate a publisher filling it in. setState runs inside
+  // timers (async), so it doesn't trigger cascading-render warnings.
+  // Demo mode (?demo=1, used by the showcase reel): the DemoDriver types the
+  // text fields (title/description/amount) with its cursor, so here we only
+  // auto-select the non-text controls (category, location, instant-book) to
+  // round out the listing. Timed to land while the cursor is typing.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("demo") !== "1") return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const at = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
+    at(1400, () => setCategoryId("fishing"));
+    at(5200, () => setLocationType("Offline"));
+    at(5600, () => setInstantBook(true));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   const parsedPrice = parseFloat(baseAmount);
   const canSubmit = title.trim().length > 0 && !isNaN(parsedPrice) && parsedPrice > 0;
 
@@ -151,6 +168,7 @@ export default function CreateServicePage() {
       header={<ScreenHeader title={isEdit ? "Edit Service" : "Create Service"} />}
       footer={
         <Button
+          data-demo="create-submit-btn"
           disabled={!canSubmit}
           onClick={handleSubmit}
           className="h-12 w-full rounded-xl text-base font-semibold"
@@ -168,10 +186,11 @@ export default function CreateServicePage() {
               <FieldLabel>Service Title</FieldLabel>
               <Input
                 aria-label="Service title"
+                data-demo="create-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Professional Home Cleaning"
-                className="h-11 rounded-xl bg-background"
+                placeholder="e.g. Deep-Sea Fishing for Beginners"
+                className="h-10 rounded-xl bg-background text-sm"
               />
             </div>
             <div>
@@ -179,7 +198,7 @@ export default function CreateServicePage() {
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger
                   aria-label="Service category"
-                  className="h-11 w-full rounded-xl border-input bg-background"
+                  className="h-10 w-full rounded-xl border-input bg-background text-sm"
                 >
                   <SelectValue placeholder="Select service category" />
                 </SelectTrigger>
@@ -196,6 +215,7 @@ export default function CreateServicePage() {
               <FieldLabel>Description</FieldLabel>
               <textarea
                 aria-label="Service description"
+                data-demo="create-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what you offer in detail (min 50 chars)…"
@@ -226,10 +246,11 @@ export default function CreateServicePage() {
                   type="number"
                   min="0"
                   aria-label="Base amount in USD"
+                  data-demo="create-amount"
                   value={baseAmount}
                   onChange={(e) => setBaseAmount(e.target.value)}
                   placeholder="0.00"
-                  className="h-11 rounded-xl bg-background pl-7"
+                  className="h-10 rounded-xl bg-background pl-7 text-sm"
                 />
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">

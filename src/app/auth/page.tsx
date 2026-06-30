@@ -72,7 +72,11 @@ export default function AuthPage() {
         {/* Login / Register tabs */}
         <Tabs defaultValue="register" className="w-full">
           <TabsList className="h-11 w-full rounded-xl p-1">
-            <TabsTrigger value="login" className="flex-1 rounded-lg text-sm">
+            <TabsTrigger
+              value="login"
+              data-demo="auth-login-tab"
+              className="flex-1 rounded-lg text-sm"
+            >
               Login
             </TabsTrigger>
             <TabsTrigger
@@ -94,6 +98,7 @@ export default function AuthPage() {
                 />
                 <Input
                   id="reg-name"
+                  data-demo="auth-reg-name"
                   placeholder="John Doe"
                   className="h-11 pl-9"
                   value={regName}
@@ -112,6 +117,7 @@ export default function AuthPage() {
                 />
                 <Input
                   id="reg-email"
+                  data-demo="auth-reg-email"
                   type="email"
                   placeholder="john@example.com"
                   className="h-11 pl-9"
@@ -150,6 +156,7 @@ export default function AuthPage() {
                 />
                 <Input
                   id="reg-password"
+                  data-demo="auth-reg-password"
                   type="password"
                   placeholder="Min. 8 characters"
                   className="h-11 pl-9"
@@ -163,6 +170,7 @@ export default function AuthPage() {
             <label className="flex cursor-pointer items-start gap-2">
               <input
                 type="checkbox"
+                data-demo="auth-reg-terms"
                 checked={termsAgreed}
                 onChange={(e) => setTermsAgreed(e.target.checked)}
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
@@ -177,6 +185,7 @@ export default function AuthPage() {
             </label>
 
             <Button
+              data-demo="auth-register-btn"
               className="h-12 w-full rounded-xl text-base font-semibold"
               disabled={!canRegister}
               onClick={handleRegister}
@@ -226,6 +235,7 @@ export default function AuthPage() {
                 />
                 <Input
                   id="login-email"
+                  data-demo="auth-login-email"
                   type="email"
                   placeholder="john@example.com"
                   className="h-11 pl-9"
@@ -256,6 +266,7 @@ export default function AuthPage() {
             </div>
 
             <Button
+              data-demo="auth-login-btn"
               className="h-12 w-full rounded-xl text-base font-semibold"
               disabled={!canLogin}
               onClick={handleLogin}

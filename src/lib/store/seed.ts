@@ -140,7 +140,7 @@ const seedBookingInputs: SeedBookingInput[] = [
     time: "1:00 PM",
     quantity: 1,
     status: "escrow_held",
-    note: "Hi! It's a 2-bedroom apartment. Looking forward to learning your system.",
+    note: "Hi! Complete beginner here — really looking forward to catching my first fish.",
     ageMinutes: 130,
   },
   {
@@ -196,13 +196,13 @@ const seedBookingInputs: SeedBookingInput[] = [
 // A second Marco-owned listing in review, so the instructor's listings view has variety.
 const pendingListing: Service = {
   id: "move-out-cleaning",
-  title: "Move-Out Deep Cleaning Masterclass",
-  categoryId: "life-skills",
+  title: "Sunset Inshore Fishing Trip",
+  categoryId: "fishing",
   providerId: "marco",
   coverImage:
-    "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=70",
+    "https://images.unsplash.com/photo-1445112098124-3e76dd67983c?auto=format&fit=crop&w=800&q=70",
   description:
-    "A focused session on getting any rental spotless for move-out, including landlord checklists and deposit-saving tips.",
+    "An evening on calm inshore waters, covering light-tackle casting, bait rigging, and reading the tide. All gear included.",
   pricingModel: "fixed",
   price: 120,
   durationMinutes: 150,
@@ -213,11 +213,11 @@ const pendingListing: Service = {
   reviewCount: 0,
   studentCount: 0,
   featured: false,
-  requirements: ["Access to the space being cleaned"],
+  requirements: ["Sun protection and a light jacket"],
   learningOutcomes: [
-    "Follow a landlord-grade checklist",
-    "Tackle deposit-critical areas",
-    "Finish in under three hours",
+    "Cast with light tackle",
+    "Rig bait for inshore species",
+    "Read the tide and find fish",
   ],
   gallery: [],
   status: "pending_review",

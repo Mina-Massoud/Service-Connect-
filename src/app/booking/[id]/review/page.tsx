@@ -70,6 +70,7 @@ export default function ReviewBookingPage() {
       header={<ScreenHeader title="Review Booking" />}
       footer={
         <Button
+          data-demo="review-confirm-pay-btn"
           className="h-12 w-full rounded-xl text-base font-semibold"
           onClick={handleConfirmPay}
         >

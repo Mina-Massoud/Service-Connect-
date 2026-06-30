@@ -248,7 +248,7 @@ export default function ProfilePage() {
         asChild
         className="h-12 w-full rounded-xl text-base font-semibold"
       >
-        <Link href="/create-service">
+        <Link href="/create-service" data-demo="profile-create-listing">
           <Plus className="mr-1.5 h-5 w-5" />
           Create a Listing
         </Link>

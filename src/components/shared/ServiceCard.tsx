@@ -26,6 +26,7 @@ export function ServiceCard({ service, variant = "list" }: ServiceCardProps) {
     return (
       <Link
         href={href}
+        data-demo="service-card"
         className="block w-[260px] shrink-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
       >
         <div className="relative h-32 w-full">

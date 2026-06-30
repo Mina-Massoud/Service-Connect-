@@ -108,7 +108,7 @@ export default function DemoPage() {
             label="Learner"
             sublabel="Discovers a skill · books a session"
             icon={<GraduationCap className="h-5 w-5" />}
-            accent="#2563EB"
+            accent="#FF385C"
             reloadKey={reloadKey}
           />
         </div>
